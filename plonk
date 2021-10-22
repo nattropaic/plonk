@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+APP_NAME=plonk
+
+project_path=$(pwd)
+project_name=$(basename "$project_path")
+project_cache_path="$HOME/.cache/$APP_NAME/$project_name"
+
+mkdir -p "$project_cache_path" 2>&1 || true
+
+# TODO: is there some way to mount ./node_modules from somewhere else (like
+# $HOME/.local/plonk/$project_name)? the container seems to always create
+# ./node_modules/ as a mount point, and then it sticks around since ./ in the
+# mounted project volume. Until/unless that can be handled, might as well really
+# install to ./node_modules/ like the toolchain is designed to.
+
+exec docker run --rm -it \
+    --user "$(id -u):$(id -g)" \
+    -e HOME=/home/node \
+    -v "$project_path:/opt/workdir" \
+    -v "$project_cache_path:/home/node/.cache" \
+    -v "$HOME/.yarnrc:/home/node/.yarnrc" \
+    ghcr.io/nattropaic/$APP_NAME:main \
+    "$@"
